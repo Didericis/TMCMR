@@ -383,7 +383,10 @@ public class RegionRenderer
 		if( debug ) System.err.println("Writing HTML tiles...");
 		try {
 			Writer w = new OutputStreamWriter(new FileOutputStream(new File(outputDir+"/tiles.html")));
-			w.write("<html><body style=\"background:black\"><table border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n");
+			
+			w.write("<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8>\"");
+			w.write(getScriptString());
+			w.write("<body style=\"background:black\"><table border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n");
 			
 			for( int z=minZ; z<=maxZ; ++z ) {
 				w.write("<tr>");
@@ -392,7 +395,7 @@ public class RegionRenderer
 					String imageFilename = "tile."+x+"."+z+".png";
 					File imageFile = new File( outputDir+"/"+imageFilename );
 					if( imageFile.exists() ) {
-						w.write("<img src=\""+imageFilename+"\"/>");
+						w.write("<img src=\""+imageFilename+"\" alt=\""+x+","+z+"\"/>");
 					}
 					w.write("</td>");
 				}
@@ -406,6 +409,46 @@ public class RegionRenderer
 		} catch( IOException e ) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Adds javascript so user can click map
+	 * and get coordinates of clicked point.
+	 */
+	//TODO Make this a separate js file with a proper js build
+	protected String getScriptString(){
+		return
+		("<head>"
+		+"<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js'></script>"
+		+"<script>"
+		+ 	"$(document).ready(function(){"
+		+   	"$('td').click(function(event){"
+		+			"var rect = this.getBoundingClientRect();"
+
+		+			"if(this.getElementsByTagName('img').length == 0){"
+		+				"return;"
+		+			"}"
+
+		+			"var regionString = this.getElementsByTagName('img').item(0).alt;"
+		+			"var regionCoords = regionString.split(',');"
+
+		+			"var regionX = parseInt(regionCoords[0]);"
+		+			"var regionY = parseInt(regionCoords[1]);"
+
+		+			"var mouseX = event.clientX;"
+		+			"var mouseY = event.clientY;"
+
+		+			"var xRelToImg = Math.ceil(mouseX - rect.left);"
+		+			"var yRelToImg = Math.ceil(mouseY - rect.top);"
+
+		+			"var x = regionX * 512 + xRelToImg;"
+		+			"var z = regionY * 512 + yRelToImg;"
+
+		+			"alert('x: ' + x + ' z: ' + z);"
+		+		"});"
+		+	"});"
+		+"</script>"
+		+"</head>");
 	}
 	
 	public void createImageTree( RegionMap rm ) {
